@@ -1,0 +1,23 @@
+# Dependencias para el script de K-means Clustering
+# Instalación: pip install -r requirements.txt
+
+# Librerías principales de análisis de datos
+numpy>=1.21.0
+pandas>=1.3.0
+
+# Visualización
+matplotlib>=3.4.0
+seaborn>=0.11.0
+
+# Machine Learning
+scikit-learn>=1.0.0
+
+# Procesamiento adicional
+scipy>=1.7.0
+
+# UI/UX Mejorada
+tqdm>=4.62.0           # Barras de progreso
+colorama>=0.4.4        # Colores en consola
+
+# Opcional: para mejorar rendimiento
+joblib>=1.0.0
