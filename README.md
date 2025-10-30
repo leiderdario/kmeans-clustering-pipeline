@@ -1,15 +1,31 @@
-# 🎯 Análisis de Agrupamiento K-means - Script Python
+# 🎯 K-means Clustering Pipeline - UI/UX Mejorada
+
+[![Python](https://img.shields.io/badge/Python-3.7%2B-blue)](https://www.python.org/)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-1.0%2B-orange)](https://scikit-learn.org/)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![GitHub](https://img.shields.io/github/stars/leiderdario/kmeans-clustering-pipeline?style=social)](https://github.com/leiderdario/kmeans-clustering-pipeline)
 
 ## 📋 Descripción
 
-Este proyecto implementa un **pipeline completo de análisis de clustering con K-means**, siguiendo las mejores prácticas del aprendizaje automático. El script realiza todas las etapas fundamentales:
+Pipeline completo de **análisis de clustering con K-means** con interfaz de usuario mejorada. Implementa todas las etapas del aprendizaje automático con visualizaciones profesionales y reportes HTML interactivos.
 
-1. ✅ **Selección de datos**
-2. 🔧 **Preparación de datos**
-3. 📊 **Análisis exploratorio (EDA)**
-4. 🎯 **Simplificación de datos (PCA)**
-5. 🤖 **Clustering K-means**
-6. 🎨 **Visualización de resultados**
+### ✨ Características Principales
+
+1. ✅ **Selección y Carga de Datos** - CSV o DataFrame
+2. 🔧 **Preparación Automática** - Imputación, codificación, normalización
+3. 📊 **Análisis Exploratorio (EDA)** - Estadísticas, correlaciones, distribuciones
+4. 🎯 **Reducción Dimensional (PCA)** - Simplificación inteligente
+5. 🤖 **K-means Clustering** - Búsqueda automática de K óptimo
+6. 🎨 **Visualizaciones** - Gráficos 2D/3D de alta calidad
+7. 📄 **Reporte HTML** - Dashboard interactivo con resultados
+
+### 🚀 **Nuevo: UI/UX Mejorada**
+
+- ✅ Sin ventanas emergentes que bloquean la ejecución
+- ✅ Mensajes con colores y emojis contextuales
+- ✅ Organización automática de resultados
+- ✅ Reporte HTML profesional
+- ✅ Encoding UTF-8 para Windows
 
 ---
 
