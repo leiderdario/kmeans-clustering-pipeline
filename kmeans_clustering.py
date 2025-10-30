@@ -121,7 +121,7 @@ class KMeansAnalyzer:
     Implementa todo el pipeline de ML: carga, preparación, EDA, simplificación y clustering.
     """
     
-    def __init__(self, random_state=42, output_dir='resultados_kmeans'):
+    def __init__(self, random_state=42, output_dir='results'):
         """
         Inicializa el analizador de K-means.
         
@@ -140,10 +140,12 @@ class KMeansAnalyzer:
         self.categorical_features = None
         self.output_dir = output_dir
         self.plots_generated = []
+        self.metrics = {}  # Almacenar métricas de evaluación
+        self.execution_time = None
         
         # Crear directorio de salida
         Path(output_dir).mkdir(exist_ok=True)
-        print_success(f"Directorio de resultados: {output_dir}/")
+        print_success(f"Carpeta '{output_dir}/' creada o actualizada")
     
     def _save_plot(self, filename, dpi=300):
         """Guarda un gráfico y cierra la figura."""
@@ -526,6 +528,15 @@ class KMeansAnalyzer:
         davies_bouldin = davies_bouldin_score(data, self.labels)
         calinski_harabasz = calinski_harabasz_score(data, self.labels)
         
+        # Almacenar métricas para el informe
+        self.metrics = {
+            'silhouette': silhouette,
+            'davies_bouldin': davies_bouldin,
+            'calinski_harabasz': calinski_harabasz,
+            'inertia': self.kmeans.inertia_,
+            'n_clusters': n_clusters
+        }
+        
         print(f"\n📊 Métricas de Evaluación:")
         print(f"   🎯 Coeficiente de Silueta: {silhouette:.4f} (rango: -1 a 1, mejor cerca de 1)")
         print(f"   🎯 Davies-Bouldin Index: {davies_bouldin:.4f} (menor es mejor)")
@@ -539,8 +550,54 @@ class KMeansAnalyzer:
             percentage = (count / len(self.labels)) * 100
             print(f"   Cluster {cluster_id}: {count} muestras ({percentage:.1f}%)")
         
+        # Guardar resumen de métricas en archivo de texto
+        self._save_metrics_summary()
+        
         print(f"\n✅ Modelo K-means entrenado exitosamente")
         return self
+    
+    def _save_metrics_summary(self):
+        """Guarda un resumen de las métricas de evaluación en archivo de texto."""
+        if not self.metrics:
+            return
+        
+        filepath = os.path.join(self.output_dir, 'metrics_summary.txt')
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write("="*70 + "\n")
+            f.write("RESUMEN DE MÉTRICAS - ANÁLISIS K-MEANS CLUSTERING\n")
+            f.write("="*70 + "\n\n")
+            f.write(f"Fecha de ejecución: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+            
+            f.write("CONFIGURACIÓN DEL MODELO:\n")
+            f.write(f"  - Número de clusters (K): {self.metrics['n_clusters']}\n")
+            f.write(f"  - Semilla aleatoria: {self.random_state}\n\n")
+            
+            f.write("MÉTRICAS DE EVALUACIÓN:\n")
+            f.write(f"  - Coeficiente de Silueta: {self.metrics['silhouette']:.6f}\n")
+            f.write(f"    (Rango: -1 a 1, mejor cerca de 1)\n\n")
+            
+            f.write(f"  - Davies-Bouldin Index: {self.metrics['davies_bouldin']:.6f}\n")
+            f.write(f"    (Menor es mejor, indica separación entre clusters)\n\n")
+            
+            f.write(f"  - Calinski-Harabasz Index: {self.metrics['calinski_harabasz']:.6f}\n")
+            f.write(f"    (Mayor es mejor, ratio de dispersión)\n\n")
+            
+            f.write(f"  - Inercia: {self.metrics['inertia']:.6f}\n")
+            f.write(f"    (Suma de distancias al cuadrado a los centroides)\n\n")
+            
+            f.write("INTERPRETACIÓN:\n")
+            if self.metrics['silhouette'] > 0.5:
+                f.write("  ✓ Excelente cohesión interna y separación entre clusters\n")
+            elif self.metrics['silhouette'] > 0.3:
+                f.write("  ✓ Buena estructura de clusters identificada\n")
+            else:
+                f.write("  ⚠ Los clusters podrían tener solapamiento\n")
+            
+            f.write("\n" + "="*70 + "\n")
+        
+        print_success(f"Guardado: {self.output_dir}/metrics_summary.txt")
+
     
     # ============================================================================
     # 6. VISUALIZACIÓN DE RESULTADOS
@@ -802,6 +859,199 @@ class KMeansAnalyzer:
         print_info(f"Abre el archivo '{report_file}' en tu navegador")
         
         return report_file
+    
+    def generate_markdown_report(self):
+        """
+        Genera el informe oficial en formato Markdown según requerimientos AA2-EV01.
+        """
+        print_header("📝 GENERANDO INFORME MARKDOWN (AA2-EV01)", Fore.GREEN)
+        
+        report_file = 'AA2-EV01_Informe_KMeans.md'
+        
+        # Preparar contenido del informe
+        markdown_content = f"""# Informe de Análisis K-means Clustering
+## Actividad AA2-EV01: Algoritmo de Agrupamiento No Supervisado con Python
+
+---
+
+### 📋 Información General
+
+- **Autor:** Sistema de Análisis ML
+- **Fecha de ejecución:** {datetime.now().strftime('%d de %B de %Y, %H:%M:%S')}
+- **Programa:** SENA - Algoritmo de Agrupamiento No Supervisado con Python
+- **Actividad:** AA2-EV01
+
+---
+
+### 🎯 Resultados del Análisis
+
+#### Configuración del Modelo
+
+- **Número óptimo de clusters encontrado:** {self.metrics.get('n_clusters', 'N/A')}
+- **Semilla aleatoria utilizada:** {self.random_state}
+- **Método de reducción dimensional:** {"PCA aplicado" if hasattr(self, 'df_pca') else "Sin PCA"}
+- **Tamaño del dataset:** {self.df.shape[0]} muestras × {self.df.shape[1]} variables
+
+---
+
+### 📊 Métricas de Evaluación del Modelo
+
+Las siguientes métricas evalúan la calidad del agrupamiento obtenido:
+
+#### 1. Coeficiente de Silueta
+- **Valor obtenido:** {self.metrics.get('silhouette', 0):.6f}
+- **Rango:** -1 a 1 (valores cercanos a 1 son mejores)
+- **Interpretación:** {"Excelente cohesión y separación" if self.metrics.get('silhouette', 0) > 0.5 else "Buena estructura identificada" if self.metrics.get('silhouette', 0) > 0.3 else "Estructura moderada"}
+
+#### 2. Índice Davies-Bouldin
+- **Valor obtenido:** {self.metrics.get('davies_bouldin', 0):.6f}
+- **Interpretación:** Menor es mejor (mide separación entre clusters)
+- **Resultado:** {"Excelente separación" if self.metrics.get('davies_bouldin', 1) < 0.8 else "Buena separación" if self.metrics.get('davies_bouldin', 1) < 1.2 else "Separación aceptable"}
+
+#### 3. Índice Calinski-Harabasz
+- **Valor obtenido:** {self.metrics.get('calinski_harabasz', 0):.6f}
+- **Interpretación:** Mayor es mejor (ratio de dispersión entre/dentro clusters)
+- **Resultado:** {"Muy bien definidos" if self.metrics.get('calinski_harabasz', 0) > 200 else "Bien definidos" if self.metrics.get('calinski_harabasz', 0) > 100 else "Moderadamente definidos"}
+
+#### 4. Inercia (Within-Cluster Sum of Squares)
+- **Valor obtenido:** {self.metrics.get('inertia', 0):.6f}
+- **Interpretación:** Suma de distancias al cuadrado de cada muestra a su centroide
+
+---
+
+### 📁 Archivos Generados
+
+Todos los resultados se encuentran en la carpeta `{self.output_dir}/`:
+
+#### Visualizaciones (PNG)
+"""
+        
+        # Listar archivos PNG generados
+        png_files = [os.path.basename(f) for f in self.plots_generated if f.endswith('.png')]
+        for idx, png_file in enumerate(png_files, 1):
+            markdown_content += f"{idx}. `{png_file}`\n"
+        
+        # Listar archivos CSV y TXT
+        markdown_content += f"""
+#### Archivos de Datos y Métricas
+"""
+        data_files = []
+        for file in os.listdir(self.output_dir):
+            if file.endswith(('.csv', '.txt')):
+                data_files.append(file)
+        
+        for idx, data_file in enumerate(data_files, 1):
+            markdown_content += f"{idx}. `{data_file}`\n"
+        
+        # Agregar resumen y conclusiones
+        markdown_content += f"""
+---
+
+### 📝 Resumen del Análisis
+
+El análisis de agrupamiento no supervisado con K-means identificó **{self.metrics.get('n_clusters', 'N/A')} clusters óptimos** en el dataset.
+
+#### Calidad del Agrupamiento
+
+"""
+        
+        # Generar resumen automático basado en métricas
+        silhouette = self.metrics.get('silhouette', 0)
+        davies_bouldin = self.metrics.get('davies_bouldin', 1)
+        
+        if silhouette > 0.5 and davies_bouldin < 0.8:
+            summary = """El análisis mostró una **excelente cohesión interna** y **separación clara entre grupos**. Los clusters identificados presentan características distintivas y bien definidas, lo que indica que el algoritmo K-means logró identificar patrones significativos en los datos.
+
+La configuración óptima del modelo permite segmentar efectivamente las observaciones en grupos homogéneos internamente pero heterogéneos entre sí."""
+        elif silhouette > 0.3:
+            summary = """El análisis demostró una **buena estructura de agrupamiento** con cohesión aceptable dentro de cada cluster y separación razonable entre grupos. Los clusters identificados muestran patrones distinguibles que pueden ser útiles para la comprensión del dataset.
+
+Los resultados sugieren que existe una estructura natural en los datos que el algoritmo K-means pudo capturar adecuadamente."""
+        else:
+            summary = """El análisis identificó una **estructura moderada** en los datos. Si bien los clusters presentan cierto grado de separación, existe algún solapamiento entre grupos que podría requerir análisis adicional o ajuste de parámetros.
+
+Se recomienda explorar diferentes valores de K o considerar métodos de clustering alternativos para mejorar la separación."""
+        
+        markdown_content += summary + "\n\n"
+        
+        markdown_content += f"""
+#### Distribución de Muestras
+
+"""
+        # Agregar distribución de clusters
+        if self.labels is not None:
+            cluster_counts = pd.Series(self.labels).value_counts().sort_index()
+            for cluster_id, count in cluster_counts.items():
+                percentage = (count / len(self.labels)) * 100
+                markdown_content += f"- **Cluster {cluster_id}:** {count} muestras ({percentage:.1f}%)\n"
+        
+        markdown_content += f"""
+---
+
+### 🔍 Metodología Aplicada
+
+El pipeline de análisis siguió las siguientes etapas del aprendizaje automático:
+
+1. **Selección y Carga de Datos:** Preparación del dataset de entrada
+2. **Preparación de Datos:** 
+   - Manejo de valores faltantes mediante imputación
+   - Codificación de variables categóricas
+   - Normalización con StandardScaler (μ=0, σ=1)
+3. **Análisis Exploratorio (EDA):**
+   - Estadísticas descriptivas
+   - Matriz de correlación
+   - Detección de outliers
+4. **Simplificación de Datos:** {"Reducción dimensional con PCA" if hasattr(self, 'df_pca') else "Datos originales sin reducción"}
+5. **Búsqueda de K Óptimo:** 
+   - Método del codo
+   - Análisis de silueta
+   - Métricas comparativas
+6. **Entrenamiento del Modelo:** K-means con parámetros optimizados
+7. **Evaluación y Visualización:** Generación de gráficos y métricas
+
+---
+
+### 📚 Conclusiones
+
+El análisis de agrupamiento no supervisado mediante el algoritmo K-means ha sido completado exitosamente, cumpliendo con los objetivos de la actividad AA2-EV01:
+
+✅ **Pipeline completo implementado** con todas las etapas del aprendizaje automático
+
+✅ **Métricas de evaluación calculadas** para validar la calidad del agrupamiento
+
+✅ **Visualizaciones generadas** para facilitar la interpretación de resultados
+
+✅ **Documentación completa** de metodología y resultados
+
+Los clusters identificados pueden utilizarse para:
+- Segmentación de datos
+- Identificación de patrones
+- Análisis exploratorio avanzado
+- Toma de decisiones basada en grupos homogéneos
+
+---
+
+### 📖 Referencias
+
+- Scikit-learn Documentation: K-means Clustering
+- MacQueen, J. (1967). "Some methods for classification and analysis of multivariate observations"
+- Rousseeuw, P. J. (1987). "Silhouettes: A graphical aid to the interpretation and validation of cluster analysis"
+
+---
+
+**Fin del Informe AA2-EV01**
+
+*Generado automáticamente por el pipeline de K-means Clustering*
+"""
+        
+        # Guardar el informe en la raíz del proyecto
+        with open(report_file, 'w', encoding='utf-8') as f:
+            f.write(markdown_content)
+        
+        print_success(f"Informe generado: {report_file}")
+        print_info("El informe Markdown ha sido guardado en la raíz del proyecto")
+        
+        return report_file
 
 
 # ============================================================================
@@ -857,6 +1107,9 @@ def run_kmeans_pipeline(filepath=None, data=None, n_clusters=None, use_pca=True,
     # 10. Generar reporte HTML
     if generate_html:
         analyzer.generate_report()
+    
+    # 11. Generar informe Markdown (AA2-EV01)
+    analyzer.generate_markdown_report()
     
     print_header("✅ PIPELINE COMPLETADO EXITOSAMENTE", Fore.GREEN)
     print_success(f"Resultados guardados en: {analyzer.output_dir}/")
